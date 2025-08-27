@@ -13,7 +13,6 @@ def generate_compose(num_clients: int):
                 "entrypoint": "python3 /main.py",
                 "environment": [
                     "PYTHONUNBUFFERED=1",
-                    "LOGGING_LEVEL=DEBUG",
                 ],
                 "networks": ["testing_net"],
             }
@@ -38,7 +37,6 @@ def generate_compose(num_clients: int):
             "entrypoint": "/client",
             "environment": [
                 f"CLI_ID={i}",
-                "CLI_LOG_LEVEL=DEBUG",
             ],
             "networks": ["testing_net"],
             "depends_on": ["server"],
