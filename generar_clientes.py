@@ -8,6 +8,8 @@ def generate_compose(num_clients: int):
             "server": {
                 "container_name": "server",
                 "image": "server:latest",
+                "volumes": ["./server/config.ini:/config.ini:ro"],
+
                 "entrypoint": "python3 /main.py",
                 "environment": [
                     "PYTHONUNBUFFERED=1",
@@ -32,6 +34,7 @@ def generate_compose(num_clients: int):
         compose["services"][f"client{i}"] = {
             "container_name": f"client{i}",
             "image": "client:latest",
+            "volumes": ["./client/config.yaml:/config.yaml:ro"],
             "entrypoint": "/client",
             "environment": [
                 f"CLI_ID={i}",
