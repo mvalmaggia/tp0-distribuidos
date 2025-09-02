@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net"
 	"time"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/op/go-logging"
 )
@@ -54,12 +57,6 @@ func (c *Client) createClientSocket() error {
 func (c *Client) StartClientLoop() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
-
-	go func() {
-		<-sigs
-		log.Infof("action: signal_received | result: in_progress | client_id: %v", c.config.ID)
-		c.running = false
-	}()
 
 	go func() {
 		<-sigs
