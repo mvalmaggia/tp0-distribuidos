@@ -24,22 +24,23 @@ type ClientConfig struct {
 
 // Client Entity that encapsulates how
 type Client struct {
-	config ClientConfig
-	conn   net.Conn
+	config  ClientConfig
+	conn    net.Conn
+	running bool
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
-		config: config,
+		config:  config,
+		running: true,
 	}
 	return client
 }
 
-// CreateClientSocket Initializes client socket. In case of
-// failure, error is printed in stdout/stderr and exit 1
-// is returned
+// createClientSocket Initializes client socket. In case of
+// failure, error is printed in stdout/stderr and error is returned
 func (c *Client) createClientSocket() error {
 	conn, err := net.Dial("tcp", c.config.ServerAddress)
 	if err != nil {
@@ -48,6 +49,7 @@ func (c *Client) createClientSocket() error {
 			c.config.ID,
 			err,
 		)
+		return err
 	}
 	c.conn = conn
 	return nil
@@ -59,19 +61,19 @@ func (c *Client) StartClientLoop() {
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
 
 	go func() {
-		<-sigs
-		log.Infof("action: signal_received | result: in_progress | client_id: %v | signal: %v", c.config.ID, sig)
+		sig := <-sigs
+		log.Infof("action: signal_received | result: in_progress | signal: %v", sig)
 		c.running = false
 		if c.conn != nil {
 			c.conn.Close()
+			log.Infof("action: shutdown_client_socket | result: success")
 		}
-		log.Infof("action: shutdown_client_socket | result: success")
 		os.Exit(0)
 	}()
 
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
+	for msgID := 1; msgID <= c.config.LoopAmount && c.running; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
 
@@ -84,6 +86,7 @@ func (c *Client) StartClientLoop() {
 		)
 		msg, err := bufio.NewReader(c.conn).ReadString('\n')
 		c.conn.Close()
+		log.Infof("action: close_connection | result: success | client_id: %v | msg_id: %v", c.config.ID, msgID)
 
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
