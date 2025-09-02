@@ -52,6 +52,26 @@ func (c *Client) createClientSocket() error {
 
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
+
+	go func() {
+		<-sigs
+		log.Infof("action: signal_received | result: in_progress | client_id: %v", c.config.ID)
+		c.running = false
+	}()
+
+	go func() {
+		<-sigs
+		log.Infof("action: signal_received | result: in_progress | client_id: %v | signal: %v", c.config.ID, sig)
+		c.running = false
+		if c.conn != nil {
+			c.conn.Close()
+		}
+		log.Infof("action: shutdown_client_socket | result: success")
+		os.Exit(0)
+	}()
+
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
