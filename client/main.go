@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/common"
+	"github.com/mvalmaggia/docker-compose-init/client/model"
 )
 
 var log = logging.MustGetLogger("log")
@@ -37,6 +38,13 @@ func InitConfig() (*viper.Viper, error) {
 	v.BindEnv("loop", "period")
 	v.BindEnv("loop", "amount")
 	v.BindEnv("log", "level")
+
+	v.BindEnv("NUMERO")
+	v.BindEnv("NOMBRE")
+	v.BindEnv("APELLIDO")
+	v.BindEnv("DOCUMENTO")
+	v.BindEnv("NACIMIENTO")
+	
 
 	// Try to read configuration from config file. If config file
 	// does not exists then ReadInConfig will fail but configuration
@@ -110,6 +118,14 @@ func main() {
 		LoopPeriod:    v.GetDuration("loop.period"),
 	}
 
+	clientBet := model.ClientBet{
+		Number:    v.GetInt("NUMERO"),
+		Name:      v.GetString("NOMBRE"),
+		Lastname:   v.GetString("APELLIDO"),
+		ID: v.GetInt("DOCUMENTO"),
+		Birthdate: v.GetString("NACIMIENTO"),
+	}
+
 	client := common.NewClient(clientConfig)
-	client.StartClientLoop()
+	client.StartClientLoop(clientBet)
 }
