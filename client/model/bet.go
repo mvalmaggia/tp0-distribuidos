@@ -1,3 +1,7 @@
+package model
+
+import "time"
+
 type ClientBet struct {
 	Number    int
 	Name      string
