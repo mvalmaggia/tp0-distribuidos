@@ -9,8 +9,10 @@ class Server:
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
 
+        self._server_socket.settimeout(1.0)
+
         self._running = True
-        self.client_socket = None
+        self._client_sock = None
 
         # Register SIGTERM handler to this instance
         signal.signal(signal.SIGTERM, self._handle_sigterm)
@@ -26,10 +28,9 @@ class Server:
 
         while self._running:
             self._client_sock = self.__accept_new_connection()
-            self.__handle_client_connection(self._client_sock)
-            self._client_sock = None
-
-        logging.info('before shutdown')
+            if self._client_sock:
+                self.__handle_client_connection(self._client_sock)
+                self._client_sock = None
         self._shutdown()
 
     def _handle_sigterm(self, signum, frame):
@@ -38,9 +39,9 @@ class Server:
 
     def _shutdown(self):
         logging.info('in shutdown')
-        if self._client_socket:
-            self._client_socket.shutdown(socket.SHUT_RDWR)
-            self._client_socket.close()
+        if self._client_sock:
+            self._client_sock.shutdown(socket.SHUT_RDWR)
+            self._client_sock.close()
             logging.info('action: shutdown_client_socket | result: success')
 
         if self._server_socket:
@@ -76,6 +77,9 @@ class Server:
 
         # Connection arrived
         logging.info('action: accept_connections | result: in_progress')
-        c, addr = self._server_socket.accept()
-        logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
-        return c
+        try:
+            c, addr = self._server_socket.accept()
+            logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
+            return c
+        except socket.timeout:
+            return None
