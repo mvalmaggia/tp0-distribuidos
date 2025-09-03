@@ -1,7 +1,6 @@
 package protocol
 
 import (
-	"encoding/binary"
 	"fmt"
 	"io"
 	"net"
@@ -32,16 +31,20 @@ func SendMessage(conn net.Conn, message string) error {
 
 // ReceiveMessage reads a length-prefixed message from the connection and returns it as a string.
 func ReceiveMessage(conn net.Conn) (string, error) {
-	header := make([]byte, HEADER_SIZE)
-	if _, err := io.ReadFull(conn, header); err != nil {
-		return "", fmt.Errorf("failed to read length header: %w", err)
-	}
+    header := make([]byte, HEADER_SIZE)
+    if _, err := io.ReadFull(conn, header); err != nil {
+        return "", fmt.Errorf("failed to read length header: %w", err)
+    }
 
-	length := binary.BigEndian.Uint32(header)
-	payload := make([]byte, length)
-	if _, err := io.ReadFull(conn, payload); err != nil {
-		return "", fmt.Errorf("failed to read payload: %w", err)
-	}
+    length := 0
+    if _, err := fmt.Sscanf(string(header), "%08d", &length); err != nil {
+        return "", fmt.Errorf("failed to parse length header: %w", err)
+    }
 
-	return string(payload), nil
+    payload := make([]byte, length)
+    if _, err := io.ReadFull(conn, payload); err != nil {
+        return "", fmt.Errorf("failed to read payload: %w", err)
+    }
+
+    return string(payload), nil
 }
