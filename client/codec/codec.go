@@ -10,7 +10,7 @@ import (
 func EncodeBet(bet model.ClientBet) string {
 	date := bet.Birthdate.Format("2006-01-02") // format date to YYYY-MM-DD
 	return fmt.Sprintf(
-		"agency:%s|dni:%d|numero:%d|nombre:%s|apellido:%s|fecha:%s\n",
+		"agency:%s|document:%s|number:%d|first_name:%s|last_name:%s|birthdate:%s\n",
 		bet.Agency,
 		bet.ID,
 		bet.Number,
