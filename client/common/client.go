@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"strings"
 
 	"github.com/op/go-logging"
 	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/protocol"
@@ -98,10 +99,18 @@ func (c *Client) StartClientLoop(bet model.ClientBet) {
 			return
 		}
 
-		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
-			c.config.ID,
-			msg,
-		)
+		if strings.TrimSpace(msg) == "ACK" {
+			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
+				bet.ID,
+				bet.Number,
+			)
+		} else {
+			log.Warningf("action: receive_ack | result: fail | client_id: %v | msg_id: %v | unexpected_msg: %v",
+				c.config.ID,
+				msgID,
+				msg,
+			)
+		}
 
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)

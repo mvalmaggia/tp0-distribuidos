@@ -4,7 +4,6 @@ from common.utils import Bet
 def decode_bet(raw_message: str) -> Bet:
     """
     Decode a bet string into a Bet object.
-    Example input: "agency:1|dni:123|numero:5|nombre:Matias|apellido:Valmaggia|fecha:1995-07-21"
     """
     fields = {}
     for part in raw_message.strip().split("|"):
