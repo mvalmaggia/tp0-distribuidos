@@ -24,8 +24,14 @@ var log = logging.MustGetLogger("log")
 func InitConfig() (*viper.Viper, error) {
 	v := viper.New()
 
-	// Configure viper to read env variables with the CLI_ prefix
 	v.AutomaticEnv()
+	v.BindEnv("NUMERO")
+	v.BindEnv("NOMBRE")
+	v.BindEnv("APELLIDO")
+	v.BindEnv("DOCUMENTO")
+	v.BindEnv("NACIMIENTO")
+
+	// Configure viper to read env variables with the CLI_ prefix
 	v.SetEnvPrefix("cli")
 	// Use a replacer to replace env variables underscores with points. This let us
 	// use nested configurations in the config file and at the same time define
@@ -37,14 +43,7 @@ func InitConfig() (*viper.Viper, error) {
 	v.BindEnv("server", "address")
 	v.BindEnv("loop", "period")
 	v.BindEnv("loop", "amount")
-	v.BindEnv("log", "level")
-
-	v.BindEnv("NUMERO")
-	v.BindEnv("NOMBRE")
-	v.BindEnv("APELLIDO")
-	v.BindEnv("DOCUMENTO")
-	v.BindEnv("NACIMIENTO")
-	
+	v.BindEnv("log", "level")	
 
 	// Try to read configuration from config file. If config file
 	// does not exists then ReadInConfig will fail but configuration
@@ -111,14 +110,17 @@ func main() {
 	// Print program config with debugging purposes
 	PrintConfig(v)
 
+	client_id := v.GetString("id")
+
 	clientConfig := common.ClientConfig{
 		ServerAddress: v.GetString("server.address"),
-		ID:            v.GetString("id"),
+		ID:            client_id,
 		LoopAmount:    v.GetInt("loop.amount"),
 		LoopPeriod:    v.GetDuration("loop.period"),
 	}
 
 	nacimientoStr := v.GetString("NACIMIENTO")
+	log.Infof("NACIMIENTO: %s, NOMBRE: %s", nacimientoStr, v.GetString("NOMBRE"))
 	nacimientoTime, err := time.Parse("2006-01-02", nacimientoStr)
 	if err != nil {
 		log.Criticalf("Could not parse NACIMIENTO as date: %v", err)
@@ -126,6 +128,7 @@ func main() {
 	}
 
 	clientBet := model.ClientBet{
+		Agency:    client_id,
 		Number:    v.GetInt("NUMERO"),
 		Name:      v.GetString("NOMBRE"),
 		Lastname:  v.GetString("APELLIDO"),
