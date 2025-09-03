@@ -1,8 +1,6 @@
 package common
 
 import (
-	"bufio"
-	"fmt"
 	"net"
 	"time"
 	"os"
@@ -10,6 +8,9 @@ import (
 	"syscall"
 
 	"github.com/op/go-logging"
+	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/protocol"
+	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/model"
+	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/codec"
 )
 
 var log = logging.MustGetLogger("log")
@@ -56,7 +57,7 @@ func (c *Client) createClientSocket() error {
 }
 
 // StartClientLoop Send messages to the client until some time threshold is met
-func (c *Client, bet ClientBet) StartClientLoop() {
+func (c *Client) StartClientLoop(bet model.ClientBet) {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
 
@@ -77,14 +78,15 @@ func (c *Client, bet ClientBet) StartClientLoop() {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
 
-		// TODO: Modify the send to avoid short-write
-		fmt.Fprintf(
-			c.conn,
-			"[CLIENT %v] Message N°%v\n",
-			c.config.ID,
-			msgID,
-		)
-		msg, err := bufio.NewReader(c.conn).ReadString('\n')
+		if err := protocol.SendMessage(c.conn, codec.EncodeBet(bet)); err != nil {
+			log.Errorf("action: send_bet | result: fail | client_id: %v | msg_id: %v | error: %v",
+				c.config.ID, msgID, err)
+			c.conn.Close()
+			return
+    	}
+		
+		// Read the servers response
+		msg, err := protocol.ReceiveMessage(c.conn)
 		c.conn.Close()
 		log.Infof("action: close_connection | result: success | client_id: %v | msg_id: %v", c.config.ID, msgID)
 

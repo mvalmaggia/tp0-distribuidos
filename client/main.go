@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/common"
-	"github.com/mvalmaggia/docker-compose-init/client/model"
+	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/model"
 )
 
 var log = logging.MustGetLogger("log")
@@ -118,12 +118,19 @@ func main() {
 		LoopPeriod:    v.GetDuration("loop.period"),
 	}
 
+	nacimientoStr := v.GetString("NACIMIENTO")
+	nacimientoTime, err := time.Parse("2006-01-02", nacimientoStr)
+	if err != nil {
+		log.Criticalf("Could not parse NACIMIENTO as date: %v", err)
+		os.Exit(1)
+	}
+
 	clientBet := model.ClientBet{
 		Number:    v.GetInt("NUMERO"),
 		Name:      v.GetString("NOMBRE"),
-		Lastname:   v.GetString("APELLIDO"),
-		ID: v.GetInt("DOCUMENTO"),
-		Birthdate: v.GetString("NACIMIENTO"),
+		Lastname:  v.GetString("APELLIDO"),
+		ID:        v.GetInt("DOCUMENTO"),
+		Birthdate: nacimientoTime,
 	}
 
 	client := common.NewClient(clientConfig)
