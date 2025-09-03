@@ -35,6 +35,7 @@ def generate_compose(num_clients: int):
             "image": "client:latest",
             "volumes": ["./client/config.yaml:/config.yaml"],
             "entrypoint": "/client",
+            "env_file": "./client/.env",
             "environment": [
                 f"CLI_ID={i}",
             ],
