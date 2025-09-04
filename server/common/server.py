@@ -81,7 +81,7 @@ class Server:
 
     def _handle_get_winners(self, client_sock, agency_id):
         if len(self._finished_agencies) != self._expected_agencies:
-            logging.warning(f"action: get_winners | result: fail | reason: not_all_batches_received | agency: {agency_id}")
+            logging.info(f"action: get_winners | result: fail | reason: not_all_batches_received | agency: {agency_id}")
             send_message(client_sock, "ERROR:NOT_ALL_BATCHES_RECEIVED")
             return
 
