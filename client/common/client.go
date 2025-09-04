@@ -117,11 +117,10 @@ func (c *Client) StartClient(bet model.ClientBet) {
         if strings.TrimSpace(msg) == "ACK" {
             log.Infof("action: apuesta_batch_enviada | result: success | client_id: %v | batch_size: %v",
                 c.config.ID, len(bets))
-            os.Exit(0)
         } else {
             log.Warningf("action: receive_ack | result: fail | client_id: %v | unexpected_msg: %v",
                 c.config.ID, msg)
-            os.Exit(1)
         }
     }
+    os.Exit(0)
 }
