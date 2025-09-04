@@ -98,14 +98,14 @@ func HandleEndOfBatch(c *Client) {
         }
 
         if err := protocol.SendMessage(c.conn, fmt.Sprintf("GET_WINNERS:%s", c.config.ID)); err != nil {
-            log.Errorf("action: get_winners | result: fail | error: %v", err)
+            log.Errorf("action: consulta_ganadores | result: fail | error: %v", err)
             c.conn.Close()
             return
         }
 
         msg, err := protocol.ReceiveMessage(c.conn)
         if err != nil {
-            log.Errorf("action: get_winners | result: fail | error: %v", err)
+            log.Errorf("action: consulta_ganadores | result: fail | error: %v", err)
             polls++
             time.Sleep(5 * time.Second)
             continue
@@ -123,11 +123,11 @@ func HandleEndOfBatch(c *Client) {
         } else {
             // Process successful response
             winners, _ := codec.DecodeWinners(msg)
-            log.Infof("action: get_winners | result: success | cant_ganadores: %d", len(winners))
+            log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", len(winners))
             c.conn.Close()  
             return
         }
-        log.Infof("action: get_winners | result: fail | reason: max_polls_reached")
+        log.Infof("action: consulta_ganadores | result: fail | reason: max_polls_reached")
     }
 }    
 
