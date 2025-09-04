@@ -14,6 +14,9 @@ import (
 	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/codec"
 )
 
+const MAX_RETRIES = 8
+const ACK_TIMEOUT = 2 * time.Second
+
 var log = logging.MustGetLogger("log")
 
 // ClientConfig Configuration used by the client
@@ -73,48 +76,47 @@ func (c *Client) StartClientLoop(bet model.ClientBet) {
 		os.Exit(0)
 	}()
 
-	// There is an autoincremental msgID to identify every message sent
-	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= c.config.LoopAmount && c.running; msgID++ {
-		// Create the connection the server in every loop iteration. Send an
-		c.createClientSocket()
-
-		if err := protocol.SendMessage(c.conn, codec.EncodeBet(bet)); err != nil {
-			log.Errorf("action: send_bet | result: fail | client_id: %v | msg_id: %v | error: %v",
-				c.config.ID, msgID, err)
-			c.conn.Close()
-			return
-    	}
-		
-		// Read the servers response
-		msg, err := protocol.ReceiveMessage(c.conn)
-		c.conn.Close()
-		log.Infof("action: close_connection | result: success | client_id: %v | msg_id: %v", c.config.ID, msgID)
-
-		if err != nil {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
-			return
-		}
-
-		if strings.TrimSpace(msg) == "ACK" {
-			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v",
-				bet.ID,
-				bet.Number,
-			)
-		} else {
-			log.Warningf("action: receive_ack | result: fail | client_id: %v | msg_id: %v | unexpected_msg: %v",
-				c.config.ID,
-				msgID,
-				msg,
-			)
-		}
-
-		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod)
-
+	// Create the connection once
+	if err := c.createClientSocket(); err != nil {
+		return
 	}
-	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+	defer c.conn.Close()
+
+	success := false
+	for attempt := 1; attempt <= MAX_RETRIES && c.running; attempt++ {
+		// Send bet
+		if err := protocol.SendMessage(c.conn, codec.EncodeBet(bet)); err != nil {
+			log.Errorf("action: send_bet | result: fail | client_id: %v | attempt: %v | error: %v",
+				c.config.ID, attempt, err)
+			continue
+		}
+
+		// Wait for server response with timeout
+		c.conn.SetReadDeadline(time.Now().Add(ACK_TIMEOUT))
+		msg, err := protocol.ReceiveMessage(c.conn)
+		if err != nil {
+			log.Warningf("action: receive_message | result: fail | client_id: %v | attempt: %v | error: %v",
+				c.config.ID, attempt, err)
+			continue
+		}
+
+		// Validate ACK
+		if strings.TrimSpace(msg) == "ACK" {
+			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v | attempt: %v",
+				bet.ID, bet.Number, attempt)
+			success = true
+			break
+		} else {
+			log.Warningf("action: receive_ack | result: fail | client_id: %v | attempt: %v | unexpected_msg: %v",
+				c.config.ID, attempt, msg)
+		}
+	}
+
+	if !success {
+		log.Errorf("action: apuesta_enviada | result: fail | client_id: %v | reason: no_ack_received",
+			c.config.ID)
+	} else {
+		log.Infof("action: close_connection | result: success | client_id: %v", c.config.ID)
+	}
 }
+

@@ -120,7 +120,6 @@ func main() {
 	}
 
 	nacimientoStr := v.GetString("NACIMIENTO")
-	log.Infof("NACIMIENTO: %s, NOMBRE: %s", nacimientoStr, v.GetString("NOMBRE"))
 	nacimientoTime, err := time.Parse("2006-01-02", nacimientoStr)
 	if err != nil {
 		log.Criticalf("Could not parse NACIMIENTO as date: %v", err)
