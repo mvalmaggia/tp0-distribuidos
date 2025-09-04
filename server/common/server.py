@@ -2,9 +2,9 @@ import socket
 import logging
 import signal
 
-from server.codec.codec import decode_bet_batch
-from protocol.protocol import receive_message, send_ack
-from common.utils import store_bets
+from server.codec.codec import decode_bet_batch, encoded_winners
+from protocol.protocol import receive_message, send_ack, send_message
+from common.utils import store_bets, load_bets, has_won
 
 class Server:
     def __init__(self, port, listen_backlog, expected_agencies=5):
@@ -54,6 +54,42 @@ class Server:
             self._server_socket.close()
             logging.info('action: shutdown_server_socket | result: success')
 
+    def _get_winners_for_agency(self, agency_id: int):
+        """
+        Retrieves a list of document ids for all the winning bets
+        for a specific agency.
+        """
+        winners = []
+        bets = load_bets()
+        for bet in bets:
+            if has_won(bet) and bet.agency == agency_id:
+                winners.append(bet)
+        return winners
+
+    def _handle_get_winners(self, client_sock, agency_id):
+        if len(self._finished_agencies) != self._expected_agencies:
+            logging.warning(f"action: get_winners | result: fail | reason: not_all_batches_received | agency: {agency_id}")
+            send_message(client_sock, "ERROR:NOT_ALL_BATCHES_RECEIVED")
+            return
+
+        winners = self._get_winners_for_agency(agency_id)
+        send_message(client_sock, encoded_winners(winners))
+        logging.info(f"action: send_winners | result: success | agency: {agency_id}")
+
+    def _handle_batch_bet(self, encoded_msg):
+        bets = decode_bet_batch(encoded_msg) #TODO: SALTEAR TITULO BET_BATCH
+
+        store_bets(bets)
+        logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
+
+    def _handle_batch_end(self, agency_id):
+        self._finished_agencies.add(agency_id)
+        logging.info(f"action: batch_end_received | result: success | agency: {agency_id}")
+
+        if len(self._finished_agencies) == self._expected_agencies:
+            logging.info("action: sorteo | result: success")
+
+
     def __handle_client_connection(self, client_sock):
         """
         Read message from a specific client socket and closes the socket
@@ -63,21 +99,21 @@ class Server:
         """
         try:
             encoded_msg = receive_message(client_sock)
-            if encoded_msg.startswith("BATCH_END:"):
-                agency_id = encoded_msg.split(":", 1)[1].strip()
-                self._finished_agencies.add(agency_id)
-                logging.info(f"action: batch_end_received | result: success | agency: {agency_id}")
 
-                if len(self._finished_agencies) == self._expected_agencies:
-                    logging.info("action: sorteo | result: success")
-                
+            if encoded_msg.startswith("GET_WINNERS"):
+                logging.info("action: get_winners_received | result: success")
+                agency_id = int(encoded_msg.split(":", 1)[1].strip())
+                self._handle_get_winners(client_sock, agency_id)
+                return
+
+            if encoded_msg.startswith("BATCH_BET"):
+               self._handle_batch_bet(encoded_msg)
+
+            if encoded_msg.startswith("BATCH_END"):
+                agency_id = encoded_msg.split(":", 1)[1].strip()
+                self._handle_batch_end(agency_id)
                 return
             
-            bets = decode_bet_batch(encoded_msg)
-
-            store_bets(bets)
-            logging.info(f'action: apuesta_recibida | result: success | cantidad: {len(bets)}')
-
             addr = client_sock.getpeername()
             send_ack(client_sock)
             logging.info(f'action: send_ack | result: success | ip: {addr[0]}')
