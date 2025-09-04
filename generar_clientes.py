@@ -33,7 +33,7 @@ def generate_compose(num_clients: int):
         compose["services"][f"client{i}"] = {
             "container_name": f"client{i}",
             "image": "client:latest",
-            "volumes": ["./client/config.yaml:/config.yaml", f"./.data/dataset/agency-{i}.csv:/dataset.csv"],
+            "volumes": ["./client/config.yaml:/config.yaml", f"./.data/agency-{i}.csv:/dataset.csv"],
             "entrypoint": "/client",
             "env_file": "./client/.env",
             "environment": [
