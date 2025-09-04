@@ -115,7 +115,7 @@ func HandleEndOfBatch(c *Client) {
         if strings.HasPrefix(msg, "ERROR:") {
             errorMsg := strings.TrimPrefix(msg, "ERROR:")
             if errorMsg == "NOT_ALL_BATCHES_RECEIVED" {
-                log.Warningf("action: get_winners | result: waiting | reason: not_all_batches_received")
+                log.Infof("action: get_winners | result: waiting | reason: not_all_batches_received")
                 c.conn.Close()
                 polls++
                 time.Sleep(3 * time.Second)
