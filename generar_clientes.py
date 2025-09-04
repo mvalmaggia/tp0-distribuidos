@@ -33,7 +33,7 @@ def generate_compose(num_clients: int):
         compose["services"][f"client{i}"] = {
             "container_name": f"client{i}",
             "image": "client:latest",
-            "volumes": ["./client/config.yaml:/config.yaml"],
+            "volumes": ["./client/config.yaml:/config.yaml", f"./data/dataset.csv:/data/agency-{i}.csv"],
             "entrypoint": "/client",
             "env_file": "./client/.env",
             "environment": [
@@ -63,4 +63,4 @@ if __name__ == "__main__":
     with open(filename, "w") as f:
         yaml.dump(data, f, sort_keys=False)
 
-    print(f"✅ {filename} generated with {num_clients} clients.")
+    print(f"{filename} generated with {num_clients} clients.")
