@@ -18,7 +18,13 @@ Se soluciona montando volumenes con los respectivos archivos de config en el cli
 Se crea un script llamado validar-echo-server.sh, que permite verificar el correcto funcionamiento del servidor. Para realizarlo, se crea un contenedor docker "lightweight", haciendo uso de la imagen busybox, que cuenta con funcionalidades basicas, tales como netcat. Esto nos permite enviar mensajes directamente al servidor sin tener que instalar netcat en la computadora del host.
 
 ### Ejercicio N°4:
+Se modifican cliente y servidor para manejar la señal SIGTERM y realizar un cierre graceful. 
 
+Se cierran correctamente sockets, archivos y otros recursos antes de finalizar, y se loguean los cierres de cada recurso.
+
+El servidor utiliza un funcion _shutdown(), que es invocada cuando se corta la ejecucion. La misma se encarga de cerrar todos los sockets abiertos y generar los correspondientes logs. Ademas, se agrega un timeout al socket del servidor, para que no se quede escuchando el socket cuando llega la señal.
+
+El cliente se "suscribe" a la señal. Cuando es recibida, se cierra la conexion con el servidor y finaliza ejecucion del mismo.
 
 ## Parte 2: Repaso de Comunicaciones
 
@@ -65,7 +71,7 @@ Se continua iterando sobre el protocolo que fue definido inicialmente. Por lo ta
 ## Parte 3: Repaso de Concurrencia
 
 ### Ejercicio N°8:
-En este ejercicio se busca que el servidor pueda atender conexiones de clientes de manera concurrente. Para solucionar esto, hice uso de la libreria threading. Python presenta ciertas particularidades en su manejo de multithreading que en muchos casos hace que no sea conveniente, pero ya que en este trabajo practico tenemos un proceso que no es cpu intesive, podemos darle uso. En el caso contrario, deberiamos utilizar procesos.
+En este ejercicio se busca que el servidor pueda atender conexiones de clientes de manera concurrente. Para solucionar esto, hice uso de la libreria threading. Python presenta ciertas particularidades en su manejo de multithreading que en muchos casos hace que no sea conveniente, pero ya que en este trabajo practico tenemos un proceso que no es cpu intensive, podemos darle uso. En el caso contrario, deberiamos utilizar procesos.
 
 Para lograr concurrencia se crea un nuevo thread con cada conexion entrante. Esta es una solucion vulnerable, pero por el alcance del tp se asume que nunca seran mas de 5 clientes. Una vez se termina dicho procesamiento se hace un join de los threads que no estan "vivos".
 
