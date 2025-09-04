@@ -64,7 +64,7 @@ class Server:
             bets = decode_bet_batch(encoded_msg)
 
             store_bets(bets)
-            logging.info(f'action: batch_recibido | result: in_progress | cantidad: {len(bets)}')
+            logging.info(f'action: batch_recibido | result: success | cantidad: {len(bets)}')
 
             addr = client_sock.getpeername()
             send_ack(client_sock)
