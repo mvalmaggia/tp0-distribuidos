@@ -107,7 +107,7 @@ func HandleEndOfBatch(c *Client) {
         if err != nil {
             log.Errorf("action: get_winners | result: fail | error: %v", err)
             polls++
-            time.Sleep(3 * time.Second)
+            time.Sleep(5 * time.Second)
             continue
         }
 
@@ -118,7 +118,7 @@ func HandleEndOfBatch(c *Client) {
                 log.Infof("action: get_winners | result: waiting | reason: not_all_batches_received")
                 c.conn.Close()
                 polls++
-                time.Sleep(3 * time.Second)
+                time.Sleep(5 * time.Second)
                 continue
             }
         } else {
@@ -128,7 +128,7 @@ func HandleEndOfBatch(c *Client) {
             c.conn.Close()  
             return
         }
-        log.Warningf("action: get_winners | result: fail | reason: max_polls_reached")
+        log.Infof("action: get_winners | result: fail | reason: max_polls_reached")
     }
 }    
 
