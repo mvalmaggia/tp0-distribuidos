@@ -2,7 +2,7 @@ import socket
 import logging
 import signal
 
-from codec.bet_codec import decode_bet
+from codec.bet_codec import decode_bet_batch
 from protocol.protocol import receive_message, send_ack
 from common.utils import store_bets
 
@@ -61,10 +61,10 @@ class Server:
         """
         try:
             encoded_msg = receive_message(client_sock)
-            bet = decode_bet(encoded_msg)
+            bets = decode_bet_batch(encoded_msg)
 
-            store_bets([bet])
-            logging.info(f'action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}')
+            store_bets(bets)
+            logging.info(f'action: batch_recibido | result: in_progress | cantidad: {len(bets)}')
 
             addr = client_sock.getpeername()
             send_ack(client_sock)

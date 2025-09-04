@@ -2,9 +2,6 @@ from datetime import datetime
 from common.utils import Bet
 
 def decode_bet(raw_message: str) -> Bet:
-    """
-    Decode a bet string into a Bet object.
-    """
     fields = {}
     for part in raw_message.strip().split("|"):
         if ":" in part:
@@ -19,3 +16,13 @@ def decode_bet(raw_message: str) -> Bet:
         birthdate=fields.get("birthdate", "1900-01-01"),
         number=fields.get("number", "0")
     )
+
+def decode_bet_batch(raw_message: str) -> list[Bet]:
+    individual_bets = raw_message.strip().split(';')
+
+    decoded_bets = []
+    for bet_str in individual_bets:
+        if bet_str:
+            decoded_bets.append(decode_bet(bet_str))
+    
+    return decoded_bets
