@@ -32,3 +32,17 @@ func EncodeBetBatch(bets []model.ClientBet) string {
     // Join all encoded bets with a semicolon separator
     return strings.Join(encodedBets, ";")
 }
+
+func DecodeWinners(encoded string) ([]int, error) {
+    if strings.TrimSpace(encoded) == "" {
+        return []int{}, nil
+    }
+
+    parts := strings.Split(encoded, ";")
+    dnis := make([]int, len(parts))
+
+    for i, part := range parts {
+        fmt.Sscanf(strings.TrimSpace(part), "%d", &dnis[i])
+    }
+    return dnis, nil
+}

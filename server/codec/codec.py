@@ -26,3 +26,11 @@ def decode_bet_batch(raw_message: str) -> list[Bet]:
             decoded_bets.append(decode_bet(bet_str))
     
     return decoded_bets
+
+def encode_winners(winners: list[Bet]) -> str:
+    encoded_winners = []
+    for bet in winners:
+        winner_str = f"{bet.document}"
+        encoded_winners.append(winner_str)
+    
+    return ';'.join(encoded_winners)

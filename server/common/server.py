@@ -2,7 +2,7 @@ import socket
 import logging
 import signal
 
-from codec.bet_codec import decode_bet_batch
+from server.codec.codec import decode_bet_batch
 from protocol.protocol import receive_message, send_ack
 from common.utils import store_bets
 
