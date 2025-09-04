@@ -7,8 +7,10 @@ from protocol.protocol import receive_message, send_ack
 from common.utils import store_bets
 
 class Server:
-    def __init__(self, port, listen_backlog):
+    def __init__(self, port, listen_backlog, expected_agencies=5):
         # Initialize server socket
+        self._finished_agencies = set()
+        self._expected_agencies = expected_agencies
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
@@ -61,6 +63,16 @@ class Server:
         """
         try:
             encoded_msg = receive_message(client_sock)
+            if encoded_msg.startswith("BATCH_END:"):
+                agency_id = encoded_msg.split(":", 1)[1].strip()
+                self._finished_agencies.add(agency_id)
+                logging.info(f"action: batch_end_received | result: success | agency: {agency_id}")
+
+                if len(self._finished_agencies) == self._expected_agencies:
+                    logging.info("action: sorteo | result: success")
+                
+                return
+            
             bets = decode_bet_batch(encoded_msg)
 
             store_bets(bets)

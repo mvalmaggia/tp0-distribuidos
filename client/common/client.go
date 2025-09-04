@@ -55,14 +55,14 @@ func (c *Client) createClientSocket() error {
     return nil
 }
 
-func HandleEndOfBatch(conn net.Conn) {
-    if err := protocol.SendMessage(conn, "BATCH_END"); err != nil {
+func HandleEndOfBatch(c *Client) {
+    if err := protocol.SendMessage(c.conn, fmt.Sprintf("BATCH_END:{%s}", c.config.ID)); err != nil {
         log.Errorf("action: send_end_of_batch | result: fail | error: %v", err)
         return
     }
     waitingMsg := true
     for waitingMsg {
-        msg, err := protocol.ReceiveMessage(conn)
+        msg, err := protocol.ReceiveMessage(c.conn)
         if err != nil {
             log.Errorf("action: receive_end_of_batch_ack | result: fail | error: %v", err)
             return
@@ -112,7 +112,7 @@ func (c *Client) StartClient(bet model.ClientBet) {
 
         if len(bets) == 0 {
             log.Infof("action: no_more_bets | result: success | client_id: %v", c.config.ID)
-            HandleEndOfBatch(c.conn)
+            HandleEndOfBatch(c)
             c.conn.Close()
             break
         }
