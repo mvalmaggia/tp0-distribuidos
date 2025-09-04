@@ -21,7 +21,7 @@ func EncodeBet(bet model.ClientBet) string {
 	)
 }
 
-// EncodeBetBatch encodes a batch of bets to a single string
+// EncodeBetBatch encodes a batch of bets to a single string with BET_BATCH prefix
 func EncodeBetBatch(bets []model.ClientBet) string {
     encodedBets := make([]string, len(bets))
     
@@ -29,8 +29,7 @@ func EncodeBetBatch(bets []model.ClientBet) string {
         encodedBets[i] = EncodeBet(bet)
     }
     
-    // Join all encoded bets with a semicolon separator
-    return strings.Join(encodedBets, ";")
+    return "BET_BATCH:" + strings.Join(encodedBets, ";")
 }
 
 func DecodeWinners(encoded string) ([]int, error) {

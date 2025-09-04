@@ -55,28 +55,7 @@ func (c *Client) createClientSocket() error {
     return nil
 }
 
-func HandleEndOfBatch(c *Client) {
-    if err := protocol.SendMessage(c.conn, fmt.Sprintf("BATCH_END:{%s}", c.config.ID)); err != nil {
-        log.Errorf("action: send_end_of_batch | result: fail | error: %v", err)
-        return
-    }
-    waitingMsg := true
-    for waitingMsg {
-        msg, err := protocol.ReceiveMessage(c.conn)
-        if err != nil {
-            log.Errorf("action: receive_end_of_batch_ack | result: fail | error: %v", err)
-            return
-        } else {
-            winners := DecodeWinners(msg)
-            log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", len(winners))
-        }
-
-        time.Sleep(1 * time.Second)
-    }
-}
-
-// StartClientLoop Send messages to the client until some time threshold is met
-func (c *Client) StartClient(bet model.ClientBet) {
+func setupSignalHandler(c *Client) {
     sigs := make(chan os.Signal, 1)
     signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
 
@@ -90,8 +69,87 @@ func (c *Client) StartClient(bet model.ClientBet) {
         }
         os.Exit(0)
     }()
+}
 
-    betsParser, err := NewBetParser(c.config.ID, "./dataset.csv")
+func HandleEndOfBatch(c *Client) {
+    if err := c.createClientSocket(); err != nil {
+        log.Errorf("action: handle_end_of_batch | result: fail | error: %v", err)
+        return
+    }
+
+    if err := protocol.SendMessage(c.conn, fmt.Sprintf("BATCH_END:%s", c.config.ID)); err != nil {
+        log.Errorf("action: send_end_of_batch | result: fail | error: %v", err)
+        c.conn.Close()
+        return
+    }
+
+    c.conn.Close()
+
+    polls := 0
+    for polls < MAX_AMOUNT_POLLS {
+        if err := c.createClientSocket(); err != nil {
+            log.Errorf("action: handle_end_of_batch | result: fail | error: %v", err)
+            return
+        }
+
+        if err := protocol.SendMessage(c.conn, fmt.Sprintf("GET_WINNERS:%s", c.config.ID)); err != nil {
+            log.Errorf("action: get_winners | result: fail | error: %v", err)
+            c.conn.Close()
+            return
+        }
+
+        msg, err := protocol.ReceiveMessage(c.conn)
+        if err != nil {
+            log.Errorf("action: get_winners | result: fail | error: %v", err)
+            polls++
+            time.Sleep(3 * time.Second)
+            continue
+        }
+
+        // Check if the message is an error message
+        if strings.HasPrefix(msg, "ERROR:") {
+            errorMsg := strings.TrimPrefix(msg, "ERROR:")
+            if errorMsg == "NOT_ALL_BATCHES_RECEIVED" {
+                log.Warningf("action: get_winners | result: waiting | reason: not_all_batches_received")
+                c.conn.Close()
+                polls++
+                time.Sleep(3 * time.Second)
+                continue
+            }
+        } else {
+            // Process successful response
+            winners := DecodeWinners(msg)
+            log.Infof("action: get_winners | result: success | cant_ganadores: %d", len(winners))
+            c.conn.Close()  
+            return
+        }
+        log.Warningf("action: get_winners | result: fail | reason: max_polls_reached")
+    }
+}    
+
+func HandleReceiveAck(c *Client) bool {
+    msg, err := protocol.ReceiveMessage(c.conn)
+    c.conn.Close()
+    log.Infof("action: close_connection | result: success | client_id: %v", c.config.ID)
+
+    if err != nil {
+        log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+            c.config.ID, err)
+        continue
+    }
+
+    if strings.TrimSpace(msg) == "ACK" {
+        return true
+    } else {
+        return false
+    }
+}
+
+// StartClientLoop Send messages to the client until some time threshold is met
+func (c *Client) StartClient(bet model.ClientBet) {
+    setupSignalHandler(c)
+
+    betsParser, err := NewBetParser(c.config.ID, BETS_DATASET_PATH)
     if err != nil {
         log.Errorf("action: create bet parser | result: fail | error: %v", err)
         return
@@ -112,13 +170,12 @@ func (c *Client) StartClient(bet model.ClientBet) {
 
         if len(bets) == 0 {
             log.Infof("action: no_more_bets | result: success | client_id: %v", c.config.ID)
-            HandleEndOfBatch(c)
             c.conn.Close()
+            HandleEndOfBatch(c)
             break
         }
 
         encodedBets := codec.EncodeBetBatch(bets)
-
         if err := protocol.SendMessage(c.conn, encodedBets); err != nil {
             log.Errorf("action: send_bet_batch | result: fail | client_id: %v | error: %v",
                 c.config.ID, err)
@@ -126,17 +183,9 @@ func (c *Client) StartClient(bet model.ClientBet) {
             continue
         }
 
-        msg, err := protocol.ReceiveMessage(c.conn)
-        c.conn.Close()
-        log.Infof("action: close_connection | result: success | client_id: %v", c.config.ID)
+        receivedAck := HandleReceiveAck(c)
 
-        if err != nil {
-            log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-                c.config.ID, err)
-            continue
-        }
-
-        if strings.TrimSpace(msg) == "ACK" {
+        if receivedAck {
             log.Infof("action: apuesta_batch_enviada | result: success | client_id: %v | batch_size: %v",
                 c.config.ID, len(bets))
         } else {
@@ -144,4 +193,5 @@ func (c *Client) StartClient(bet model.ClientBet) {
                 c.config.ID, msg)
         }
     }
+    os.Exit(0)
 }

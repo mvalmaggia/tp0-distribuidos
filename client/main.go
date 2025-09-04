@@ -99,10 +99,12 @@ func main() {
 	v, err := InitConfig()
 	if err != nil {
 		log.Criticalf("%s", err)
+		os.Exit(1)
 	}
 
 	if err := InitLogger(v.GetString("log.level")); err != nil {
 		log.Criticalf("%s", err)
+		os.Exit(1)
 	}
 
 	// Print program config with debugging purposes
