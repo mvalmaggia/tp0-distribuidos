@@ -6,6 +6,8 @@ import (
     "os/signal"
     "syscall"
     "strings"
+    "fmt"
+    "time"
 
     "github.com/op/go-logging"
     "github.com/7574-sistemas-distribuidos/docker-compose-init/client/protocol"
@@ -14,6 +16,9 @@ import (
 )
 
 var log = logging.MustGetLogger("log")
+
+const MAX_AMOUNT_POLLS = 5
+const BETS_DATASET_PATH = "./dataset.csv"
 
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
@@ -118,7 +123,7 @@ func HandleEndOfBatch(c *Client) {
             }
         } else {
             // Process successful response
-            winners := DecodeWinners(msg)
+            winners, _ := codec.DecodeWinners(msg)
             log.Infof("action: get_winners | result: success | cant_ganadores: %d", len(winners))
             c.conn.Close()  
             return
@@ -135,7 +140,7 @@ func HandleReceiveAck(c *Client) bool {
     if err != nil {
         log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
             c.config.ID, err)
-        continue
+        return false
     }
 
     if strings.TrimSpace(msg) == "ACK" {
@@ -189,8 +194,8 @@ func (c *Client) StartClient(bet model.ClientBet) {
             log.Infof("action: apuesta_batch_enviada | result: success | client_id: %v | batch_size: %v",
                 c.config.ID, len(bets))
         } else {
-            log.Warningf("action: receive_ack | result: fail | client_id: %v | unexpected_msg: %v",
-                c.config.ID, msg)
+            log.Warningf("action: receive_ack | result: fail | client_id: %v",
+                c.config.ID)
         }
     }
     os.Exit(0)

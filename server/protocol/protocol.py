@@ -1,6 +1,6 @@
 import socket
 
-HEADER_SIZE = 8  # 8 characters for message length
+HEADER_SIZE = 4  # 8 characters for message length
 
 def send_message(conn: socket.socket, message: str) -> None:
     """

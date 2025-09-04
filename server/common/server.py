@@ -2,7 +2,7 @@ import socket
 import logging
 import signal
 
-from server.codec.codec import decode_bet_batch, encoded_winners
+from codec.codec import decode_bet_batch, encode_winners
 from protocol.protocol import receive_message, send_ack, send_message
 from common.utils import store_bets, load_bets, has_won
 
@@ -73,7 +73,7 @@ class Server:
             return
 
         winners = self._get_winners_for_agency(agency_id)
-        send_message(client_sock, encoded_winners(winners))
+        send_message(client_sock, encode_winners(winners))
         logging.info(f"action: send_winners | result: success | agency: {agency_id}")
 
     def _handle_batch_bet(self, encoded_msg):

@@ -6,7 +6,7 @@ import (
 	"net"
 )
 
-const HEADER_SIZE = 8
+const HEADER_SIZE = 4
 
 func writeAll(conn net.Conn, data []byte) error {
 	total := 0
