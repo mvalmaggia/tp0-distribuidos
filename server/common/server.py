@@ -14,6 +14,7 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+        self._winners_by_agency = {}
 
         self._server_socket.settimeout(1.0)
 
@@ -54,17 +55,26 @@ class Server:
             self._server_socket.close()
             logging.info('action: shutdown_server_socket | result: success')
 
+    def _get_winners_by_agency(self):
+        """
+        Retrieves dictiornary with agency ids as keys and list of document ids as values
+        for all the winning bets stored in the STORAGE_FILEPATH file.
+        """
+        self._winners_by_agency = {}
+        bets = load_bets()
+        for bet in bets:
+            if has_won(bet):
+                agency = bet.agency
+                if agency not in self._winners_by_agency:
+                    self._winners_by_agency[agency] = []
+                self._winners_by_agency[agency].append(bet.document)
+
     def _get_winners_for_agency(self, agency_id: int):
         """
         Retrieves a list of document ids for all the winning bets
         for a specific agency.
         """
-        winners = []
-        bets = load_bets()
-        for bet in bets:
-            if has_won(bet) and bet.agency == agency_id:
-                winners.append(bet)
-        return winners
+        return self._winners_by_agency.get(agency_id, [])
 
     def _handle_get_winners(self, client_sock, agency_id):
         if len(self._finished_agencies) != self._expected_agencies:
@@ -88,6 +98,7 @@ class Server:
 
         if len(self._finished_agencies) == self._expected_agencies:
             logging.info("action: sorteo | result: success")
+            self._get_winners_by_agency()
 
 
     def __handle_client_connection(self, client_sock):
