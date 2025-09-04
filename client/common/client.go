@@ -77,10 +77,10 @@ func setupSignalHandler(c *Client) {
 }
 
 func HandleEndOfBatch(c *Client) {
-    if err := c.createClientSocket(); err != nil {
-        log.Errorf("action: handle_end_of_batch | result: fail | error: %v", err)
-        return
-    }
+    // if err := c.createClientSocket(); err != nil {
+    //     log.Errorf("action: handle_end_of_batch | result: fail | error: %v", err)
+    //     return
+    // }
 
     if err := protocol.SendMessage(c.conn, fmt.Sprintf("BATCH_END:%s", c.config.ID)); err != nil {
         log.Errorf("action: send_end_of_batch | result: fail | error: %v", err)
@@ -175,7 +175,6 @@ func (c *Client) StartClient(bet model.ClientBet) {
 
         if len(bets) == 0 {
             log.Infof("action: no_more_bets | result: success | client_id: %v", c.config.ID)
-            c.conn.Close()
             HandleEndOfBatch(c)
             break
         }

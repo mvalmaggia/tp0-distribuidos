@@ -131,7 +131,7 @@ class Server:
             send_ack(client_sock)
             logging.info(f'action: send_ack | result: success | ip: {addr[0]}')
         except OSError as e:
-            logging.error("action: receive_message | result: fail | error: {e}")
+            logging.error(f"action: receive_message | result: fail | error: {e}")
         finally:
             client_sock.close()
 
