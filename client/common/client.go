@@ -2,7 +2,6 @@ package common
 
 import (
 	"net"
-	"time"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,8 +19,7 @@ var log = logging.MustGetLogger("log")
 type ClientConfig struct {
 	ID            string
 	ServerAddress string
-	LoopAmount    int
-	LoopPeriod    time.Duration
+	MaxBatchAmount int
 }
 
 // Client Entity that encapsulates how

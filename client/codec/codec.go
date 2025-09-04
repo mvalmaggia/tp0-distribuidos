@@ -2,6 +2,7 @@ package codec
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/model"
 )
@@ -18,4 +19,16 @@ func EncodeBet(bet model.ClientBet) string {
 		bet.Lastname,
 		date,
 	)
+}
+
+// EncodeBetBatch encodes a batch of bets to a single string
+func EncodeBetBatch(bets []model.ClientBet) string {
+    encodedBets := make([]string, len(bets))
+    
+    for i, bet := range bets {
+        encodedBets[i] = EncodeBet(bet)
+    }
+    
+    // Join all encoded bets with a semicolon separator
+    return strings.Join(encodedBets, ";")
 }
