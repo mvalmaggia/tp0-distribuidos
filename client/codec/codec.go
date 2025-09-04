@@ -29,7 +29,7 @@ func EncodeBetBatch(bets []model.ClientBet) string {
         encodedBets[i] = EncodeBet(bet)
     }
     
-    return "BET_BATCH:" + strings.Join(encodedBets, ";")
+    return "BET_BATCH;" + strings.Join(encodedBets, ";")
 }
 
 func DecodeWinners(encoded string) ([]int, error) {

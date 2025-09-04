@@ -2,6 +2,8 @@ import socket
 import logging
 import signal
 
+import time
+
 from codec.codec import decode_bet_batch, encode_winners
 from protocol.protocol import receive_message, send_ack, send_message
 from common.utils import store_bets, load_bets, has_won
@@ -74,6 +76,7 @@ class Server:
         Retrieves a list of document ids for all the winning bets
         for a specific agency.
         """
+        logging.info(f"action: get_winners_for_agency | result: in_progress | agency: {agency_id}")
         return self._winners_by_agency.get(agency_id, [])
 
     def _handle_get_winners(self, client_sock, agency_id):
@@ -110,14 +113,13 @@ class Server:
         """
         try:
             encoded_msg = receive_message(client_sock)
-
             if encoded_msg.startswith("GET_WINNERS"):
                 logging.info("action: get_winners_received | result: success")
                 agency_id = int(encoded_msg.split(":", 1)[1].strip())
                 self._handle_get_winners(client_sock, agency_id)
                 return
 
-            if encoded_msg.startswith("BATCH_BET"):
+            if encoded_msg.startswith("BET_BATCH"):
                self._handle_batch_bet(encoded_msg)
 
             if encoded_msg.startswith("BATCH_END"):
@@ -128,7 +130,6 @@ class Server:
             addr = client_sock.getpeername()
             send_ack(client_sock)
             logging.info(f'action: send_ack | result: success | ip: {addr[0]}')
-            
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
@@ -149,6 +150,7 @@ class Server:
             try:
                 c, addr = self._server_socket.accept()
                 logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
+                time.sleep(0.1) 
                 return c
             except socket.timeout:
                 # Silent timeout, just continue the loop

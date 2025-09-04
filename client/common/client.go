@@ -181,6 +181,8 @@ func (c *Client) StartClient(bet model.ClientBet) {
         }
 
         encodedBets := codec.EncodeBetBatch(bets)
+        // log.Infof("action: send_bet_batch | result: in_progress | bets: %v | batch_size: %v",
+            // encodedBets, len(bets))
         if err := protocol.SendMessage(c.conn, encodedBets); err != nil {
             log.Errorf("action: send_bet_batch | result: fail | client_id: %v | error: %v",
                 c.config.ID, err)

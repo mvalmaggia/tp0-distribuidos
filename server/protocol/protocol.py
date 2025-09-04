@@ -1,6 +1,6 @@
 import socket
 
-HEADER_SIZE = 4  # 8 characters for message length
+HEADER_SIZE = 8  # 8 characters for message length
 
 def send_message(conn: socket.socket, message: str) -> None:
     """
@@ -20,7 +20,6 @@ def receive_message(conn: socket.socket) -> str:
 
     # Read the payload
     payload = read_bytes(conn, length)
-
     return payload.decode("utf-8")
 
 def read_bytes(conn: socket.socket, length):

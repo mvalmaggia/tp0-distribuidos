@@ -18,8 +18,8 @@ def decode_bet(raw_message: str) -> Bet:
     )
 
 def decode_bet_batch(raw_message: str) -> list[Bet]:
-    if raw_message.startswith("BET_BATCH:"):
-        raw_message = raw_message[len("BET_BATCH:"):]
+    if raw_message.startswith("BET_BATCH;"):
+        raw_message = raw_message[len("BET_BATCH;"):]
 
     individual_bets = raw_message.strip().split(';')
 
@@ -30,10 +30,5 @@ def decode_bet_batch(raw_message: str) -> list[Bet]:
     
     return decoded_bets
 
-def encode_winners(winners: list[Bet]) -> str:
-    encoded_winners = []
-    for bet in winners:
-        winner_str = f"{bet.document}"
-        encoded_winners.append(winner_str)
-    
-    return ';'.join(encoded_winners)
+def encode_winners(winners: list[str]) -> str:
+    return ';'.join(winners)
