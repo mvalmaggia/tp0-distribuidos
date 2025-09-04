@@ -71,7 +71,7 @@ func (c *Client) StartClient(bet model.ClientBet) {
         os.Exit(0)
     }()
 
-    betsParser, err := NewBetParser(c.config.ID, "/dataset.csv")
+    betsParser, err := NewBetParser(c.config.ID, "./dataset.csv")
     if err != nil {
         log.Errorf("action: create bet parser | result: fail | error: %v", err)
         return

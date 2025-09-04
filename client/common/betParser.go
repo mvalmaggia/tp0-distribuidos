@@ -9,7 +9,11 @@ import (
     "time"
 
     "github.com/7574-sistemas-distribuidos/docker-compose-init/client/model"
+    "github.com/7574-sistemas-distribuidos/docker-compose-init/client/codec"
+    "github.com/7574-sistemas-distribuidos/docker-compose-init/client/protocol"
 )
+
+const MAX_BATCH_BYTES = 8 * 1024
 
 type BetParser struct {
     clientID string
@@ -35,6 +39,7 @@ func NewBetParser(clientID string, filePath string) (*BetParser, error) {
 
 func (l *BetParser) NextBatch(size int) ([]model.ClientBet, error) {
     var bets []model.ClientBet
+    currentBatchBytes := 0
 
     for i := 0; i < size; i++ {
         record, err := l.reader.Read()
@@ -51,11 +56,23 @@ func (l *BetParser) NextBatch(size int) ([]model.ClientBet, error) {
             continue
         }
 
+        encoded := codec.EncodeBet(bet)
+        if len(encoded) > MAX_BATCH_BYTES {
+            log.Warningf("Single bet too large, skipping: %v bytes", len(encoded))
+            continue
+        }
+
+        if currentBatchBytes+len(encoded) > MAX_BATCH_BYTES - protocol.HEADER_SIZE {
+            break
+        }
+
         bets = append(bets, bet)
+        currentBatchBytes += len(encoded)
     }
 
     return bets, nil
 }
+
 
 func (l *BetParser) Close() {
     _ = l.file.Close()
