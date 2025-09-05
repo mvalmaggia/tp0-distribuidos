@@ -2,6 +2,10 @@
 
 # Solucion
 
+## Captura de pantalla de tests pasando
+
+![Captura de pantalla de tests pasando](tests-passing.png)
+
 ## Parte 1: Introducción a Docker
 
 ### Ejercicio N°1:
