@@ -29,6 +29,7 @@ class Server:
 
         # Register SIGTERM handler to this instance
         signal.signal(signal.SIGTERM, self._handle_sigterm)
+        signal.signal(signal.SIGINT, self._handle_sigterm)
 
     def run(self):
         """
@@ -102,13 +103,14 @@ class Server:
         return self._winners_by_agency.get(agency_id, [])
 
     def _handle_get_winners(self, client_sock, agency_id):
-        if len(self._finished_agencies) != self._expected_agencies:
-            send_message(client_sock, "ERROR:NOT_ALL_BATCHES_RECEIVED")
-            return
+        with self._lock: 
+            if len(self._finished_agencies) != self._expected_agencies:
+                send_message(client_sock, "ERROR:NOT_ALL_BATCHES_RECEIVED")
+                return
 
-        winners = self._get_winners_for_agency(agency_id)
-        send_message(client_sock, encode_winners(winners))
-        logging.info(f"action: send_winners | result: success | agency: {agency_id}")
+            winners = self._get_winners_for_agency(agency_id)
+            send_message(client_sock, encode_winners(winners))
+            logging.info(f"action: send_winners | result: success | agency: {agency_id}")
 
     def _handle_batch_bet(self, encoded_msg):
         bets = decode_bet_batch(encoded_msg)
